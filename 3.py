@@ -1,43 +1,32 @@
-import json
+import random
 import csv
 
-DATASET_PATH = 'memes_dataset.csv'
-OUT_PATH = 'out.json'
+
+def generate_references(dataset_path, num_references=20):
+    references = []
+    with open(dataset_path, 'r', encoding='latin-1') as dataset:
+        reader = csv.DictReader(dataset, delimiter=';')
+        all_records = list(reader)
+
+        for _ in range(num_references):
+            record = random.choice(all_records)
+            reference = f"{record['Book-Author']}. {record['Book-Title']} - {record['Year-Of-Publication']}"
+            references.append(reference)
+
+    return references
 
 
-def get_title(dataset):
-    dataset.seek(0)
-    title = next(dataset)
-    title = title.split(',')
-    title = [col.strip() for col in title]
-    return title
+def save_references_to_file(references, output_path):
+    with open(output_path, 'w', encoding='utf-8') as output_file:
+        for i, reference in enumerate(references, start=1):
+            output_file.write(f"{i}. {reference}\n")
 
 
-def get_object_alt(line, title):
-    reader = csv.DictReader([line], title, delimiter=',', quotechar='"')
-    res = next(reader)
-    return res
+if __name__ == "__main__":
+    dataset_path = 'books-en.csv'
+    output_path = 'references.txt'
 
+    references = generate_references(dataset_path)
+    save_references_to_file(references, output_path)
 
-def filter_year(dataset, title, year):
-    filtered = []
-    dataset.seek(0)  # Reset the file pointer
-    next(dataset)  # Skip the header row
-
-    for line in dataset:
-        obj = get_object_alt(line, title)
-        year_value = obj['origin_year']
-        if year_value == str(year):
-            filtered.append(obj)
-
-    dataset.seek(0)  # Reset the file pointer
-    return filtered
-
-
-if __name__ == '__main__':
-    with open(DATASET_PATH) as dataset:
-        title = get_title(dataset)
-        res = filter_year(dataset, title, 2008)
-        res = json.dumps(res, indent=4)
-        with open(OUT_PATH, 'w') as out:
-            out.write(res)
+    print(f"Список библиографических ссылок сохранен в файл {output_path}")
